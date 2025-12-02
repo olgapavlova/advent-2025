@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define FILE_PATH "i.txt"
+#define FILE_PATH "input.txt"
 
 typedef struct pair_s {
-  char from[120];
-  char to[120];
+  char from[20];
+  char to[20];
 } pair_t;
 
 int compare(char * a, char * b) {
@@ -35,20 +35,6 @@ void split(char * a, pair_t * p) {
   }
 }
 
-
-unsigned long long check(char * c, pair_t * d, int pq) {
-    unsigned long long result = 0;
-    for(int j = 0; j <= pq; j++) {
-      if((compare(c, d[j].from) != -1) && (compare(c, d[j].to) != 1)) {
-        sscanf(c, "%lld", &result);
-        printf("%lld\n", result);  
-        break;
-      }
-    }
-  return result;
-}
-
-
 int main(void) {
 
   FILE * f = fopen(FILE_PATH, "r");
@@ -57,7 +43,7 @@ int main(void) {
   char * line;
   size_t len;
   getline(&line, &len, f);
-  // printf("%d\t%s\n", (int)len, line);
+  printf("%d\t%s\n", (int)len, line);
 
 
   char * str;
@@ -66,7 +52,7 @@ int main(void) {
   int i = 0;
   str = strtok(line, delim);
   split(str, &diap[0]);
-  // printf("%s\t%s\n", diap[i].from, diap[i].to);
+  printf("%s\t%s\n", diap[i].from, diap[i].to);
 
 
   int max = 1;
@@ -74,39 +60,45 @@ int main(void) {
   while(str = strtok(NULL, delim)) {
     i++;
     split(str, &diap[i]);
-    // printf("%s\t%s\n", diap[i].from, diap[i].to);
+    printf("%s\t%s\n", diap[i].from, diap[i].to);
     if(strlen(diap[i].to) > max) {
       max = strlen(diap[i].to);
     }
   }
 
   int pq = i;
-  // printf("\n%d\n", pq);
+  printf("\n%d\n", pq);
 
-  // printf("\n%d\n", max);
+  max /= 2;
+
+  printf("\n%d\n", max);
 
   char * strmax = malloc(sizeof(char) * 20);
   strmax[0] = '1';
-  for(int i = 1; i < max/2 + 1; i++) { strmax[i] = '0'; }
-  strmax[max/2 + 1] = '\0';
-  // printf("\n%s\n", strmax);
+  for(int i = 1; i < max + 1; i++) { strmax[i] = '0'; }
+  strmax[max + 1] = '\0';
+  printf("\n%s\n", strmax);
 
   long realmax = 0;
   sscanf(strmax, "%ld", &realmax);
-  // printf("\n%ld\n", realmax);
+  printf("\n%ld\n", realmax);
 
   unsigned long long zoom = 0;
 
   for(long i = 1; i < realmax; i++) {
-    char current[240] = {'\0'}; 
+    char current[40] = {'\0'}; 
     sprintf(current, "%ld%ld", i, i);
-    zoom += check(current, diap, pq);
-    sprintf(current, "%ld%ld%ld", i, i, i);
-    zoom += check(current, diap, pq);
-    sprintf(current, "%ld%ld%ld%ld%ld", i, i, i, i, i);
-    zoom += check(current, diap, pq);
-    sprintf(current, "%ld%ld%ld%ld%ld%ld%ld", i, i, i, i, i, i, i);
-    zoom += check(current, diap, pq);
+
+    for(int j = 0; j <= pq; j++) {
+      if((compare(current, diap[j].from) != -1) && 
+         (compare(current, diap[j].to) != 1)) {
+        unsigned long long aa = 0;
+        sscanf(current, "%lld", &aa);
+        zoom += aa;
+        // printf("%s\t%s-%s\t%lld\t%lld\n", current, diap[j].from, diap[j].to, aa, zoom);
+        printf("%s\t%s-%s\t%d\t%d\n", current, diap[j].from, diap[j].to, compare(current, diap[j].from), compare(current, diap[j].to));
+      }
+    }
   }
 
   printf("\n%lld\n", zoom);
