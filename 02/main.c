@@ -1,12 +1,34 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #define FILE_PATH "input.txt"
+
+int compare(char * a, char * b) {
+  int result = 0;
+  int len_a = strlen(a);
+  int len_b = strlen(b);
+  if(len_a < len_b) { result = -1; }
+  else if(len_a > len_b) { result = 1; }
+  else {
+    for(int i = 0; i < len_a; i++) {
+      if (a[i] < b[i]) { result = -1; break; }
+      if (a[i] > b[i]) { result = 1; break; }
+    }
+  }
+
+  return result;
+}
 
 int main(void) {
 
+  printf("%d\n", compare("1", "12"));
+  printf("%d\n", compare("12", "12"));
+  printf("%d\n", compare("1212", "1210"));
+  printf("%d\n", compare("1212", "121"));
+
+#if 0
   FILE * f = fopen(FILE_PATH, "r");
   if(!f) { abort(); }
-  
 
   char * line;
   size_t len;
@@ -29,5 +51,6 @@ int main(void) {
 
 
   fclose(f);
+#endif
   return 0;
 }
