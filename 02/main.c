@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define FILE_PATH "i.txt"
+#define FILE_PATH "input.txt"
 
 typedef struct pair_s {
   char from[120];
@@ -48,6 +48,12 @@ unsigned long long check(char * c, pair_t * d, int pq) {
   return result;
 }
 
+void save(char * c, pair_t * d, int pq) {
+  static FILE * to = NULL;
+  if (to == NULL) { to = fopen("out.txt", "w"); }
+  unsigned long long is = check(c, d, pq);
+  if (is != 0) { fprintf(to, "%lld\n", is);}
+}
 
 int main(void) {
 
@@ -95,19 +101,20 @@ int main(void) {
   sscanf(strmax, "%ld", &realmax);
   // printf("\n%ld\n", realmax);
 
-  unsigned long long zoom = 0;
 
   for(long i = 1; i < realmax; i++) {
     char current[240] = {'\0'}; 
     sprintf(current, "%ld%ld", i, i);
-    zoom += check(current, diap, pq);
+    save(current, diap, pq);
     sprintf(current, "%ld%ld%ld", i, i, i);
-    zoom += check(current, diap, pq);
+    save(current, diap, pq);
     sprintf(current, "%ld%ld%ld%ld%ld", i, i, i, i, i);
-    zoom += check(current, diap, pq);
+    save(current, diap, pq);
     sprintf(current, "%ld%ld%ld%ld%ld%ld%ld", i, i, i, i, i, i, i);
-    zoom += check(current, diap, pq);
+    save(current, diap, pq);
   }
+
+  unsigned long long zoom = 0;
 
   printf("\n%lld\n", zoom);
 
