@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define FILE_PATH "diapsort.txt"
+#define FILE_PATH "input.txt"
 #define OUT_PATH "output.txt"
 
 typedef struct pair_s {
@@ -40,12 +40,6 @@ int compare(char* a, char* b) {
   return result;
 }
 
-int between(char * n, char * from, char * to) {
-  int result = 0;
-  result = (compare(n, from) != -1) && (compare(n, to) != 1);
-  return result;
-}
-
 void split(char* a, pair_t* p) {
   char* w = p->from;
   int j = 0;
@@ -70,29 +64,28 @@ int main(void) {
   size_t len;
   size_t read;
   int pq = 0;  // количество диапазонов
+
+  bool interval = true;
   while ((read = getline(&line, &len, f)) != -1) {
     size_t ll = strlen(line);
-    line[ll - 1] = '\0';
-    ll--;
-    split(line, &diap[pq++]);
+    line[ll - 1] = '\0'; ll--;
+    if (ll == 0) {
+      interval = false;
+    } else if (interval) {
+        split(line, &diap[pq++]);
+      } else {
+        for (int j = 0; j < pq; j++) {
+          if ((compare(line, diap[j].from) != -1) &&
+              (compare(line, diap[j].to) != 1)) {
+            // fprintf(g, "%s-%s\t%s\n", diap[j].from, diap[j].to, line);
+            fprintf(g, "%s\n", line);
+          } else { printf("NO\n"); }
+        }
+      }
   }
 
   printf("%d\n", pq);
 
-  long long zoom = 0;
-  char * p = diap[0].from;
-  char * q = diap[0].to;
-  printf("%s-%s\n", p, q);
-  for(int i = 0; i < pq; i++) {
-    if((i < pq - 1) && between(diap[i + 1].from, p, q)) {
-      if(compare(diap[i+1].to, q) == -1) { q = diap[i + 1].to; }
-      printf("!");
-    }
-  }
-  printf("%s-%s\n", p, q);
-
-  printf("\n%lld\n", zoom);
-
-  fclose(f);
-  return 0;
+fclose(f);
+return 0;
 }
