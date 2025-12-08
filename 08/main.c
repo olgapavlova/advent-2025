@@ -64,8 +64,8 @@ int main(void) {
   fclose(h);
   fclose(g);
 
-  // Сортировка средствами системы + оставляем первую 1000 связей
-  int sysres = system("sort -t- -k3,3n " PAIRS_PATH " | head -n " TOP " > " PSORT_PATH);
+  // Сортировка средствами системы
+  int sysres = system("sort -t- -k3,3n " PAIRS_PATH " > " PSORT_PATH);
   if(sysres != 0) { perror("Не удалось отсортировать пары."); }
   
 
@@ -82,32 +82,17 @@ int main(void) {
     zero[i] = 0;
   }
 
-  // Матрица связности
+  // Постепенно расширяем матрицу связности
   g = fopen(PSORT_PATH, "r");
   int m[Q][Q] = {0};
   while((read = getline(&line, &len, g)) != -1) {
-    int i = atoi(strtok(line, "-"));
-    int j = atoi(strtok(NULL, "-"));
-    m[i][j] = 1;
-    m[j][i] = 1;
-  }
+    int a = atoi(strtok(line, "-"));
+    int b = atoi(strtok(NULL, "-"));
+    m[a][b] = 1;
+    m[a][b] = 1;
 
-  
-  for(int gr = 0; gr < Q; gr++) { // для каждой группы…
-    // берём первую невключённую точку
-    int point = -1;
-    gcount[point] = 0;
-    for(int i = 0; i < Q; i++) {
-      if(incl[i] == 0) { point = i; break; }
-    }
-
-    // если все точки включены — останавливаем перебор групп
-    if(point == -1) break;
-
-    // фиксируем первую точку как включённую
-    incl[point] = 1;
-
-    // проверка всей группы
+    // стартуем построение связей с точки a
+    int point = a; incl[a] = 1;
 
     // инициируем проверку
     memcpy(conn, m[point], Q * sizeof(int));
@@ -144,21 +129,23 @@ int main(void) {
 
     }
 
-    // выводим цепочку
-    int sum = 0;
-    //printf("%d-", gr);
+    // ищем первую всё ещё невключённую точку
+    point = -1;
     for(int i = 0; i < Q; i++) {
-      if(conn[i] == 1) {
-        // printf("%d ", i);
-        sum++;
-        // gcount[gr]++;
-      }
+      if(conn[i] == 0) { point = i; break; }
     }
-    gcount[gr] = sum;
-    printf("%d\n", sum);
+
+    // если все точки включены — останавливаем рост матрицы
+    if(point == -1) {
+      printf("a[%d]: %ld\t%ld\t%ld\n", a, p[a].x, p[a].y, p[a].z);
+      printf("b[%d]: %ld\t%ld\t%ld\n", b, p[b].x, p[b].y, p[b].z);
+      printf("%lld\n", (long long)p[a].x * (long long)p[b].x);
+      break;
+    }
 
   }
 
+  fclose(g);
   fclose(f);
   return 0;
 }
