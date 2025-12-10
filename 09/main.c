@@ -1,213 +1,94 @@
-#include <stdbool.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define IN_PATH "i.txt"
-#define ISX_PATH "isx.txt"
-#define ISY_PATH "isy.txt"
-#define W 99000
-#define H 99000
+#define TR_PATH "tr.txt"
+#define TL_PATH "tl.txt"
+#define BR_PATH "br.txt"
+#define BL_PATH "bl.txt"
+#define MAX 55
 
+// Тип точки
+typedef struct point_s {
+  int x;
+  int y;
+} point_t;
 
-// Пустые колонки
-static int empty_cols[W] = 0;
+// Массивы хороших точек
+static point_t tr[MAX] = {0};
+static point_t tl[MAX] = {0};
+static point_t br[MAX] = {0};
+static point_t bl[MAX] = {0};
 
-// Поиск пустых колонок
-int find_empty_cols(void) {
-  int xprev = -1;
-  char * line; size_t len; size_t read;
-  FILE* f = fopen(ISX_PATH, "r");
-  while((read = getline(&line, &len, f)) != -1) {
-   int x = atoi(strtok(line, ","));
-   int delta = x - xprev;
-   if(delta != 1) {
-     result += delta - 1;
-   }
-   xprev = x;
+void clear(point_t * arr) {
+  for(int i = 0; i < MAX; i++) {
+    arr[i].x = -1;
+    arr[i].y = -1;
+  }
+}
+
+void read(char * path, point_t * arr) {
+  FILE * f = fopen(path, "r");
+
+  char* line; size_t len; size_t read;
+  int num = 0;
+  while ((read = getline(&line, &len, f)) != -1) {
+    arr[num].x = atoi(strtok(line, ","));
+    arr[num].y = atoi(strtok(NULL, ","));
+    // printf("(%d)\t[%d:%d]\n", num, arr[num].x, arr[num].y);
+    num++;
   }
   fclose(f);
 }
 
-
-
+long long square(point_t a, point_t b) {
+  int w = (a.x > b.x) ? (a.x - b.x + 1) : (b.x - a.x + 1);
+  int h = (a.y > b.y) ? (a.y - b.y + 1) : (b.y - a.y + 1);
+  return (long long)w * h;
+}
 
 int main(void) {
-  char mm[W][H] = {0};
-  char m[W][H] = {0};
-  char dely[W] = {0}; 
-  // char * dely = malloc(W * sizeof(char));
-  // char delx[H] = {0};
-  int mx = 0;
-  int my = 0;
+  clear(tr);
+  clear(tl);
+  clear(br);
+  clear(bl);
 
-  // printf("%d\t%d\n", W, H);
+  read(TR_PATH, tr);
+  read(TL_PATH, tl);
+  read(BR_PATH, br);
+  read(BL_PATH, bl);
 
-  // Считываем координаты всех точек
-  char * line;
-  size_t len;
-  size_t read;
-  FILE* f = fopen(IN_PATH, "r");
-  while((read = getline(&line, &len, f)) != -1) {
-   int x = atoi(strtok(line, ","));
-   int y = atoi(strtok(NULL, ","));
-   mm[x][y] = 1;
-  }
-  fclose(f);
-
-  // Убираем дырки
-  
-  // Сначала убираем пустые колонки
-  for(int x = 0; x < W; x++) {
-    dely[x] = 1;
-    for(int y = 0; y < H; y++) {
-      dely[x] &= (!(mm[x][y]));
-    }
-    printf("%d\n", dely[x]);
-  }
-
-  // mx = dely[W - 1];
-
-  return 0;
-
-#if 0
-  // Выводим матрицу
-  for(int y = 0; y < H; y++) {
-    for(int x = 0; x < W; x++) {
-      printf("%c", (m[x][y] == 1) ? '#' : '.');
-    }
-    printf("\n");
-  }
-#endif
-
-// Интересующие нас точки
-// Потом будем связывать tr&bl и tl&br в прямоугольники
-int tl[W] = {0};  // сверху слева пусто
-int br[W] = {0};  // снизу справа пусто
-int tr[W] = {0};  // сверху справа пусто
-int bl[W] = {0};  // снизу слева пусто
-
-  // Собираем tl
-  int ymin = H;
-  for(int x = 0; x < W; x++) {
-    tl[x] = -1;
-    for(int y = 0; y < H; y++) {
-      if((m[x][y]) && (y < ymin)) {
-        ymin = y;
-#if 0
-        tl[x] = y;
-        printf("[%d:%d] → %d\n", x, y, ymin);
-#endif
-        break;
+  long long smax_trbl = -1;
+  point_t t;
+  point_t b;
+  for(int n = 0; n < MAX; n++) {
+    for(int m = 0; m < MAX; m++) {
+      if((tr[n].x != -1) && (bl[m].x != -1) && (tr[n].x > bl[m].x)) {
+        long long s = square(tr[n], bl[m]);
+        if(s > smax_trbl) {
+          smax_trbl = s;
+          t = tr[n];
+          b = bl[m];
+        }
       }
     }
   }
-  // printf("\n");
+  printf("[%d:%d]\t[%d:%d] → %lld\n", t.x, t.y, b.x, b.y, smax_trbl);
 
-#if 0
-  printf("tl\t");
-  for(int x = 0; x < W; x++) printf("%3d ", tl[x]);
-  printf("\n");
-#endif
-
-  // Собираем br
-  int ymax = -1;
-  for(int x = W - 1; x >= 0; x--) {
-    br[x] = -1;
-    for(int y = H - 1; y >= 0; y--) {
-      if((m[x][y]) && (y > ymax)) {
-        br[x] = y;
-        ymax = y;
-        // printf("[%2d:%2d] → %2d\n", x, y, ymax);
-        break; 
+  long long smax_tlbr = -1;
+  for(int n = 0; n < MAX; n++) {
+    for(int m = 0; m < MAX; m++) {
+      if((tl[n].x != -1) && (br[m].x != -1) && (tl[n].x < br[m].x)) {
+        long long s = square(br[m], tl[n]);
+        if(s > smax_tlbr) {
+          smax_tlbr = s;
+          t = tl[n];
+          b = br[m];
+        }
       }
     }
   }
-  // printf("\n");
-
-#if 0
-  printf("br\t");
-  for(int x = 0; x < W; x++) printf("%3d ", br[x]);
-  printf("\n");
-#endif
-
-  // Собираем tr
-  ymin = H;
-  for(int x = W - 1; x >= 0; x--) {
-    tr[x] = -1;
-    for(int y = 0; y < H; y++) {
-      if((m[x][y]) && (y < ymin)) {
-        tr[x] = y;
-        ymin = y;
-        // printf("[%2d:%2d] → %2d\n", x, y, ymin);
-        break; 
-      }
-    }
-  }
-  // printf("\n");
-
-#if 0
-  printf("tr\t");
-  for(int x = 0; x < W; x++) printf("%3d ", tr[x]);
-  printf("\n");
-#endif
-
-
-  // Собираем bl
-  ymax = -1;
-  for(int x = 0; x < W; x++) {
-    bl[x] = -1;
-    for(int y = H - 1; y >= 0; y--) {
-      if((m[x][y]) && (y > ymax)) { 
-        bl[x] = y; 
-        ymax = y; 
-        // printf("[%2d:%2d] → %2d\n", x, y, ymax);
-        break; 
-      }
-
-    }
-  }
-  // printf("\n");
-
-#if 0
-  printf("bl\t");
-  for(int x = 0; x < W; x++) printf("%3d ", bl[x]);
-  printf("\n");
-#endif
-
-  // Ищем максимальную площадь для tl & br
-  long long smaxtlbr = -1;
-  for (int xtl = 0; xtl < W; xtl++) {
-    for(int xbr = xtl + 1; xbr < W; xbr++) {
-      if((tl[xtl] != -1) &&
-         (br[xbr] != -1) &&
-         (tl[xtl] < br[xbr])) {
-        long long s = (long long)(xbr - xtl + 1) * (long long)(br[xbr] - tl[xtl] + 1);
-        if(s > smaxtlbr) smaxtlbr = s;
-        // printf("[%3d:%3d]\t[%3d:%3d] → %4lld | %4lld\n", xtl, tl[xtl], xbr, br[xbr], s, smaxtlbr);
-      }
-    }
-  }
-  // printf("\n");
-
-
-  // Ищем максимальную площадь для tr & bl
-  long long smaxtrbl = -1;
-  for (int xtr = W - 1; xtr >= 0; xtr--) {
-    for(int xbl = 0; xbl < xtr; xbl++) {
-      if((tr[xtr] != -1) &&
-         (bl[xbl] != -1) &&
-         (tr[xtr] < bl[xbl])) {
-        long long s = (long long)(xtr - xbl + 1) * (long long)(bl[xbl] - tr[xtr] + 1);
-        if(s > smaxtrbl) smaxtrbl = s;
-        // printf("[%3d:%3d]\t[%3d:%3d] → %4lld | %4lld\n", xtr, tr[xtr], xbl, bl[xbl], s, smaxtrbl);
-      }
-    }
-  }
-  // printf("\n");
-
-  // Печатаем максимум
-  if(smaxtrbl > smaxtlbr) printf("%lld\n", smaxtrbl);
-  else printf("%lld\n", smaxtlbr);
+  printf("[%d:%d]\t[%d:%d] → %lld\n", t.x, t.y, b.x, b.y, smax_tlbr);
 
   return 0;
 }
