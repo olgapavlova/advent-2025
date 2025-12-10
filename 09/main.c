@@ -2,163 +2,212 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define FILE_PATH "input.txt"
-#define Q 1000
-#define TOP "1000"
-#define DIST_PATH "dist.txt"
-#define PAIRS_PATH "pairs.txt"
-#define PSORT_PATH "psort.txt"
+#define IN_PATH "i.txt"
+#define ISX_PATH "isx.txt"
+#define ISY_PATH "isy.txt"
+#define W 99000
+#define H 99000
 
-// Тип точки
-typedef struct point_s {
-  long x;
-  long y;
-  long z;
-  int group;
-} point_t;
 
-// Все точки
-static point_t p[Q] = {0};
-static point_t null = {.x = 0, .y = 0, .z = 0};
+// Пустые колонки
+static int empty_cols[W] = 0;
 
-// Квадрат расстояния
-long long dist(point_t a, point_t b) {
-  long long result = 0;
-  result += (a.x - b.x) * (a.x - b.x);
-  result += (a.y - b.y) * (a.y - b.y);
-  result += (a.z - b.z) * (a.z - b.z);
-  return result;
+// Поиск пустых колонок
+int find_empty_cols(void) {
+  int xprev = -1;
+  char * line; size_t len; size_t read;
+  FILE* f = fopen(ISX_PATH, "r");
+  while((read = getline(&line, &len, f)) != -1) {
+   int x = atoi(strtok(line, ","));
+   int delta = x - xprev;
+   if(delta != 1) {
+     result += delta - 1;
+   }
+   xprev = x;
+  }
+  fclose(f);
 }
 
-int main(void) {
-  FILE* f = fopen(FILE_PATH, "r");
 
+
+
+int main(void) {
+  char mm[W][H] = {0};
+  char m[W][H] = {0};
+  char dely[W] = {0}; 
+  // char * dely = malloc(W * sizeof(char));
+  // char delx[H] = {0};
+  int mx = 0;
+  int my = 0;
+
+  // printf("%d\t%d\n", W, H);
+
+  // Считываем координаты всех точек
   char * line;
   size_t len;
   size_t read;
-
-  // Считываем координаты всех точек
-  for(int ln = 0; ln < Q; ln++) {
-   read = getline(&line, &len, f);
-   p[ln].x = atoi(strtok(line, ","));
-   p[ln].y = atoi(strtok(NULL, ","));
-   p[ln].z = atoi(strtok(NULL, "\n"));
-   p[ln].group = 0;
+  FILE* f = fopen(IN_PATH, "r");
+  while((read = getline(&line, &len, f)) != -1) {
+   int x = atoi(strtok(line, ","));
+   int y = atoi(strtok(NULL, ","));
+   mm[x][y] = 1;
   }
-
-  // Считаем расстояния и выводим матрицу расстояний + список расстояний в парах
-  FILE* g = fopen(DIST_PATH, "w");
-  FILE* h = fopen(PAIRS_PATH, "w");
-  for(int i = 0; i < Q; i++) {
-    fprintf(g, "%d\t", i);
-   for(int j = 0; j <= i; j++) {
-    fprintf(g, "0\t");
-   }
-   for(int j = i + 1; j < Q; j++) {
-    long long d = dist(p[i], p[j]);
-    fprintf(g, "%lld\t", d);
-    fprintf(h, "%d-%d-%lld\n", i, j, d);
-   }
-   fprintf(g, "\t\n");
-  }
-  fclose(h);
-  fclose(g);
-
-  // Сортировка средствами системы + оставляем первую 1000 связей
-  int sysres = system("sort -t- -k3,3n " PAIRS_PATH " | head -n " TOP " > " PSORT_PATH);
-  if(sysres != 0) { perror("Не удалось отсортировать пары."); }
-  
-
-  // Подготовка к разбиению на группы 
-  int current = 1;     // прорабатываемая группа
-  int gcount[Q] = {0}; // счётчик членов групп
-  int incl[Q] = {0};   // вектор включённости
-  int conn[Q] = {0};   // вектор итоговой достижимости
-  int check[Q] = {0};  // вектор текущей проверки (поиска в ширину)
-  int step[Q] = {0};   // вектор шага проверки (точно понадобится!)
-  int zero[Q] = {0};   // нулевой вектор (для очистки)
-
-  for(int i = 0; i < Q; i++) {
-    zero[i] = 0;
-  }
-
-  // Матрица связности
-  g = fopen(PSORT_PATH, "r");
-  int m[Q][Q] = {0};
-  while((read = getline(&line, &len, g)) != -1) {
-    int i = atoi(strtok(line, "-"));
-    int j = atoi(strtok(NULL, "-"));
-    m[i][j] = 1;
-    m[j][i] = 1;
-  }
-
-  
-  for(int gr = 0; gr < Q; gr++) { // для каждой группы…
-    // берём первую невключённую точку
-    int point = -1;
-    gcount[point] = 0;
-    for(int i = 0; i < Q; i++) {
-      if(incl[i] == 0) { point = i; break; }
-    }
-
-    // если все точки включены — останавливаем перебор групп
-    if(point == -1) break;
-
-    // фиксируем первую точку как включённую
-    incl[point] = 1;
-
-    // проверка всей группы
-
-    // инициируем проверку
-    memcpy(conn, m[point], Q * sizeof(int));
-    conn[point] = 1; check[point] = 1;
-
-    // наращиваем группу, пока есть что проверять
-    int moresteps = 1;
-    while(moresteps == 1) {
-      moresteps = 0;
-      for(int i = 0; i < Q; i++) { step[i] = 0; }
-
-      // собираем шаг проверки
-      for(int i = 0; i < Q; i++) {
-        if((conn[i] == 1) && (check[i] == 0)) {
-          moresteps = 1;  // есть что проверять
-          step[i] = 1;
-        }
-      }
-
-      // добавляем связи шага
-      for(int i = 0; i < Q; i++) {
-        if(step[i] == 1) {
-          conn[i] = 1;
-          incl[i] = 1;
-          for(int j = 0; j < Q; j++) {
-            if(m[i][j] == 1) {
-              conn[j] = 1;
-              incl[j] = 1;
-            }
-          } 
-          check[i] = 1;
-        }
-      }
-
-    }
-
-    // выводим цепочку
-    int sum = 0;
-    //printf("%d-", gr);
-    for(int i = 0; i < Q; i++) {
-      if(conn[i] == 1) {
-        // printf("%d ", i);
-        sum++;
-        // gcount[gr]++;
-      }
-    }
-    gcount[gr] = sum;
-    printf("%d\n", sum);
-
-  }
-
   fclose(f);
+
+  // Убираем дырки
+  
+  // Сначала убираем пустые колонки
+  for(int x = 0; x < W; x++) {
+    dely[x] = 1;
+    for(int y = 0; y < H; y++) {
+      dely[x] &= (!(mm[x][y]));
+    }
+    printf("%d\n", dely[x]);
+  }
+
+  // mx = dely[W - 1];
+
+  return 0;
+
+#if 0
+  // Выводим матрицу
+  for(int y = 0; y < H; y++) {
+    for(int x = 0; x < W; x++) {
+      printf("%c", (m[x][y] == 1) ? '#' : '.');
+    }
+    printf("\n");
+  }
+#endif
+
+// Интересующие нас точки
+// Потом будем связывать tr&bl и tl&br в прямоугольники
+int tl[W] = {0};  // сверху слева пусто
+int br[W] = {0};  // снизу справа пусто
+int tr[W] = {0};  // сверху справа пусто
+int bl[W] = {0};  // снизу слева пусто
+
+  // Собираем tl
+  int ymin = H;
+  for(int x = 0; x < W; x++) {
+    tl[x] = -1;
+    for(int y = 0; y < H; y++) {
+      if((m[x][y]) && (y < ymin)) {
+        ymin = y;
+#if 0
+        tl[x] = y;
+        printf("[%d:%d] → %d\n", x, y, ymin);
+#endif
+        break;
+      }
+    }
+  }
+  // printf("\n");
+
+#if 0
+  printf("tl\t");
+  for(int x = 0; x < W; x++) printf("%3d ", tl[x]);
+  printf("\n");
+#endif
+
+  // Собираем br
+  int ymax = -1;
+  for(int x = W - 1; x >= 0; x--) {
+    br[x] = -1;
+    for(int y = H - 1; y >= 0; y--) {
+      if((m[x][y]) && (y > ymax)) {
+        br[x] = y;
+        ymax = y;
+        // printf("[%2d:%2d] → %2d\n", x, y, ymax);
+        break; 
+      }
+    }
+  }
+  // printf("\n");
+
+#if 0
+  printf("br\t");
+  for(int x = 0; x < W; x++) printf("%3d ", br[x]);
+  printf("\n");
+#endif
+
+  // Собираем tr
+  ymin = H;
+  for(int x = W - 1; x >= 0; x--) {
+    tr[x] = -1;
+    for(int y = 0; y < H; y++) {
+      if((m[x][y]) && (y < ymin)) {
+        tr[x] = y;
+        ymin = y;
+        // printf("[%2d:%2d] → %2d\n", x, y, ymin);
+        break; 
+      }
+    }
+  }
+  // printf("\n");
+
+#if 0
+  printf("tr\t");
+  for(int x = 0; x < W; x++) printf("%3d ", tr[x]);
+  printf("\n");
+#endif
+
+
+  // Собираем bl
+  ymax = -1;
+  for(int x = 0; x < W; x++) {
+    bl[x] = -1;
+    for(int y = H - 1; y >= 0; y--) {
+      if((m[x][y]) && (y > ymax)) { 
+        bl[x] = y; 
+        ymax = y; 
+        // printf("[%2d:%2d] → %2d\n", x, y, ymax);
+        break; 
+      }
+
+    }
+  }
+  // printf("\n");
+
+#if 0
+  printf("bl\t");
+  for(int x = 0; x < W; x++) printf("%3d ", bl[x]);
+  printf("\n");
+#endif
+
+  // Ищем максимальную площадь для tl & br
+  long long smaxtlbr = -1;
+  for (int xtl = 0; xtl < W; xtl++) {
+    for(int xbr = xtl + 1; xbr < W; xbr++) {
+      if((tl[xtl] != -1) &&
+         (br[xbr] != -1) &&
+         (tl[xtl] < br[xbr])) {
+        long long s = (long long)(xbr - xtl + 1) * (long long)(br[xbr] - tl[xtl] + 1);
+        if(s > smaxtlbr) smaxtlbr = s;
+        // printf("[%3d:%3d]\t[%3d:%3d] → %4lld | %4lld\n", xtl, tl[xtl], xbr, br[xbr], s, smaxtlbr);
+      }
+    }
+  }
+  // printf("\n");
+
+
+  // Ищем максимальную площадь для tr & bl
+  long long smaxtrbl = -1;
+  for (int xtr = W - 1; xtr >= 0; xtr--) {
+    for(int xbl = 0; xbl < xtr; xbl++) {
+      if((tr[xtr] != -1) &&
+         (bl[xbl] != -1) &&
+         (tr[xtr] < bl[xbl])) {
+        long long s = (long long)(xtr - xbl + 1) * (long long)(bl[xbl] - tr[xtr] + 1);
+        if(s > smaxtrbl) smaxtrbl = s;
+        // printf("[%3d:%3d]\t[%3d:%3d] → %4lld | %4lld\n", xtr, tr[xtr], xbl, bl[xbl], s, smaxtrbl);
+      }
+    }
+  }
+  // printf("\n");
+
+  // Печатаем максимум
+  if(smaxtrbl > smaxtlbr) printf("%lld\n", smaxtrbl);
+  else printf("%lld\n", smaxtlbr);
+
   return 0;
 }
