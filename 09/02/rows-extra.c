@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #define COLS_PATH "cols-pure.txt"
-#define ROWS_PATH "rows-extra.txt"
-#define OUT_PATH "cols-extra.txt"
+#define ROWS_PATH "rows-pure.txt"
+#define OUT_PATH "rows-extra.txt"
 #define MAX 990000
 
 typedef struct segment_s {
@@ -12,7 +12,7 @@ typedef struct segment_s {
   int to;
 } segment_t;
 
-static segment_t rows[MAX] = {0};
+static segment_t cols[MAX] = {0};
 
 int main(void) {
   FILE* fc = fopen(COLS_PATH, "r");
@@ -20,36 +20,36 @@ int main(void) {
   FILE* g = fopen(OUT_PATH, "w");
 
   for(int i = 0; i < MAX; i++) {
-    rows[i].from = -1;
-    rows[i].to = -1;
+    cols[i].from = -1;
+    cols[i].to = -1;
   }
 
-  // Читаем горизонтали 
+  // Читаем вертикали 
   char* line; size_t len; size_t read;
-  while ((read = getline(&line, &len, fr)) != -1) {
-    int y = atoi(strtok(line, ","));
-    rows[y].from = atoi(strtok(NULL, ","));
-    rows[y].to = atoi(strtok(NULL, ","));
-  }
-
-  // Насыщаем вертикали
   while ((read = getline(&line, &len, fc)) != -1) {
     int x = atoi(strtok(line, ","));
+    cols[x].from = atoi(strtok(NULL, ","));
+    cols[x].to = atoi(strtok(NULL, ","));
+  }
+
+  // Насыщаем горизонтали
+  while ((read = getline(&line, &len, fr)) != -1) {
+    int y = atoi(strtok(line, ","));
     int from = atoi(strtok(NULL, ","));
     int to = atoi(strtok(NULL, ","));
-    for(int y = 0; y < from; y++) {
-      if((rows[y].from <= x) && (rows[y].to >= x)) {
-        from = y;
+    for(int x = 0; x < from; x++) {
+      if((cols[x].from <= y) && (cols[x].to >= y)) {
+        from = x;
         break;
       }
     }
-    for(int y = MAX - 1; y >= to; y--) {
-      if((rows[y].from <= x) && (rows[y].to >= x)) {
-        to = y;
+    for(int x = MAX - 1; x >= to; x--) {
+      if((cols[x].from <= y) && (cols[x].to >= y)) {
+        to = x;
         break;
       }
     }
-    fprintf(g, "%d,%d,%d\n", x, from, to);
+    fprintf(g, "%d,%d,%d\n", y, from, to);
   }
 
   fclose(g);

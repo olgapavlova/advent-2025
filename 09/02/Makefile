@@ -3,8 +3,10 @@ all:
 	@make clean --no-print-directory
 	@make cols-pure.run --no-print-directory
 	@make rows-pure.run --no-print-directory
+	@make rows-extra.run --no-print-directory
 	@make cols-extra.run --no-print-directory
 	@make squares.run --no-print-directory
+	@./squares.sh
 
 %.run:
 	gcc -g -O2 $*.c -o $*.run

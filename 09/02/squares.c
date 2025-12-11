@@ -8,6 +8,7 @@
 #define MAX 500
 
 typedef struct segment_s {
+  int x;
   int from;
   int to;
 } segment_t;
@@ -19,14 +20,22 @@ typedef struct point_s {
 
 static point_t p[MAX] = {0};
 static segment_t cols[MAX] = {0};
+static int idcolmax = MAX; 
 
 int if_in(int x, int y) {
   int result = 1;
-  int xcol = x;
-  while(cols[xcol].from == 0) { xcol--; } 
-  result &= (cols[xcol].from <= y);
-  result &= (cols[xcol].to >= y);
+  int idcol = idcolmax;
+  while((cols[idcol].x == 0) || (cols[idcol].x > x)) { idcol--; } 
+  result &= (cols[idcol].from <= y);
+  result &= (cols[idcol].to >= y);
   return result;
+}
+
+
+long long square(point_t a, point_t b) {
+  int w = (a.x > b.x) ? (a.x - b.x + 1) : (b.x - a.x + 1);
+  int h = (a.y > b.y) ? (a.y - b.y + 1) : (b.y - a.y + 1);
+  return (long long)w * h;
 }
 
 
@@ -45,27 +54,26 @@ int main(void) {
 
   // Читаем вертикали 
   f = fopen(COLS_PATH, "r");
+  num = 0;
   while ((read = getline(&line, &len, f)) != -1) {
-    int x = atoi(strtok(line, ","));
-    cols[x].from = atoi(strtok(NULL, ","));
-    cols[x].to = atoi(strtok(NULL, ","));
+    cols[num].x = atoi(strtok(line, ","));
+    cols[num].from = atoi(strtok(NULL, ","));
+    cols[num].to = atoi(strtok(NULL, ","));
+    num++;
   }
 
-  int xmax = MAX; while(p[xmax].x == 0) { xmax--; }
+  while(p[idcolmax].x == 0) { idcolmax--; }
 
   FILE* g = fopen(OUT_PATH, "w");
-  for(int ax = 0; ax < xmax; ax++) {
-    for(int bx = 0; bx < xmax; bx++) {
-      if((p[ax].x != 0) && (p[bx].x != 0)
-          && (p[ax].x <= p[bx].x) && (p[ax].y <= p[bx].y)) {
-        int in = if_in(p[ax].x, p[bx].y) && if_in(p[bx].x, p[ax].y);
-        if(in) {
-          fprintf(g, "%d,%d,%d,%d\n", p[ax].x, p[ax].y, p[bx].x, p[bx].y);
-        }
+  for(int ax = 0; ax < idcolmax; ax++) {
+    for(int bx = ax + 1; bx < idcolmax; bx++) {
+      int in = if_in(p[ax].x, p[bx].y) && if_in(p[bx].x, p[ax].y);
+      if(in) {
+        long long s = square(p[ax], p[bx]);
+        fprintf(g, "%d,%d,%d,%d:%lld\n", p[ax].x, p[ax].y, p[bx].x, p[bx].y, s);
       }
     }
   }
   fclose(g);
-
   return 0;
 }

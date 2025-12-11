@@ -1,1 +1,1 @@
-awk -F',' '{ print ($3-$1 + 1)*($4-$2 + 1)}' squares.txt | sort -n
+sort -t: -k2,2n squares.txt
