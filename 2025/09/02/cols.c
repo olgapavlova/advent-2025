@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #define IN_PATH "x-direct.txt"
-#define OUT_PATH "cols-pure.txt"
+#define OUT_PATH "cols.txt"
 
 int main(void) {
   FILE* f = fopen(IN_PATH, "r");
@@ -20,7 +20,15 @@ int main(void) {
     int y = atoi(strtok(NULL, ","));
 
     if (x != xnow) {
-      if(xnow != -1) fprintf(g, "%d,%d,%d\n", xnow, ymin, ymax); // записываем диапазон предыдущей вертикали 
+      if(xnow != -1) {
+        if (xnow != 3808) {  // 3808 — единственный особый случай
+          fprintf(g, "%d,%d,%d\n", xnow, ymin, ymax); // записываем диапазон предыдущей вертикали 
+        } else {
+          // 3808 — особый случай: две горизонтали
+          fprintf(g, "3808,36718,37946\n");
+          fprintf(g, "3808,61892,63122\n");
+        }
+      }
       xnow = x; ymin = INT_MAX; ymax = -1;
     }
 
@@ -28,6 +36,7 @@ int main(void) {
     if (y > ymax) ymax = y;
   }
   fprintf(g, "%d,%d,%d\n", xnow, ymin, ymax); // записываем диапазон последней вертикали 
+
 
   fclose(g);
   fclose(f);

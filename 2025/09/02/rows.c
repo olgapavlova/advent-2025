@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #define IN_PATH "y-direct.txt"
-#define OUT_PATH "rows-pure.txt"
+#define OUT_PATH "rows.txt"
 
 int main(void) {
   FILE* f = fopen(IN_PATH, "r");
